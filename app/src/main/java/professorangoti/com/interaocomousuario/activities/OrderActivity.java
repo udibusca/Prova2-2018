@@ -11,15 +11,22 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import professorangoti.com.interaocomousuario.R;
+import java.util.List;
 
-public class OrderActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+import professorangoti.com.interaocomousuario.R;
+import professorangoti.com.interaocomousuario.api.domain.ProdutoVrDto;
+import professorangoti.com.interaocomousuario.api.repository.SobremesaRepository;
+
+public class OrderActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener, SobremesaRepository.SobremesaServiceListener {
     private String pedido;
     private int entrega;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_order);
+        ButterKnife.bind(this);
 
         Intent intent = getIntent();
         pedido = intent.getStringExtra("mensagem");
@@ -36,7 +43,10 @@ public class OrderActivity extends AppCompatActivity implements AdapterView.OnIt
         if (spinner != null) {
             spinner.setAdapter(adapter);
         }
+
+
     }
+
 
     public void onRadioButtonClicked(View view) {
         boolean checked = ((RadioButton) view).isChecked();
@@ -66,6 +76,11 @@ public class OrderActivity extends AppCompatActivity implements AdapterView.OnIt
         }
     }
 
+    @OnClick(R.id.button)
+    void fecharConta() {
+        new SobremesaRepository(this).getPrecoSobremesa();
+    }
+
     public void displayToast(String message) {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
@@ -78,5 +93,26 @@ public class OrderActivity extends AppCompatActivity implements AdapterView.OnIt
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
 
+    }
+
+    @Override
+    public void response(List<ProdutoVrDto> produtoVrDtoList) {
+        ProdutoVrDto sobremesaSelecionada = new ProdutoVrDto();
+
+        for (ProdutoVrDto sobremesa :
+                produtoVrDtoList) {
+            if (sobremesa.getProduto().equals(pedido)) {
+                sobremesaSelecionada = sobremesa;
+            }
+        }
+
+        Intent intent = new Intent(OrderActivity.this, PrecoActivity.class);
+        intent.putExtra("pedido", sobremesaSelecionada);
+        startActivity(intent);
+    }
+
+    @Override
+    public void serverError(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 }
